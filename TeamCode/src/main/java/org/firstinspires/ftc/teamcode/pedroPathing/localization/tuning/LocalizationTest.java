@@ -1,9 +1,9 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.localization.tuning;
 
 import static org.firstinspires.ftc.teamcode.pedroPathing.tuning.FollowerConstants.leftFrontMotorName;
-import static org.firstinspires.ftc.teamcode.pedroPathing.tuning.FollowerConstants.leftRearMotorName;
+import static org.firstinspires.ftc.teamcode.pedroPathing.tuning.FollowerConstants.leftBackMotorName;
 import static org.firstinspires.ftc.teamcode.pedroPathing.tuning.FollowerConstants.rightFrontMotorName;
-import static org.firstinspires.ftc.teamcode.pedroPathing.tuning.FollowerConstants.rightRearMotorName;
+import static org.firstinspires.ftc.teamcode.pedroPathing.tuning.FollowerConstants.rightBackMotorName;
 import static org.firstinspires.ftc.teamcode.pedroPathing.tuning.FollowerConstants.leftFrontMotorDirection;
 import static org.firstinspires.ftc.teamcode.pedroPathing.tuning.FollowerConstants.leftRearMotorDirection;
 import static org.firstinspires.ftc.teamcode.pedroPathing.tuning.FollowerConstants.rightFrontMotorDirection;
@@ -42,9 +42,9 @@ public class LocalizationTest extends OpMode {
     private Telemetry telemetryA;
 
     private DcMotorEx leftFront;
-    private DcMotorEx leftRear;
+    private DcMotorEx leftBack;
     private DcMotorEx rightFront;
-    private DcMotorEx rightRear;
+    private DcMotorEx rightBack;
     private List<DcMotorEx> motors;
 
     /**
@@ -57,15 +57,15 @@ public class LocalizationTest extends OpMode {
         dashboardPoseTracker = new DashboardPoseTracker(poseUpdater);
 
         leftFront = hardwareMap.get(DcMotorEx.class, leftFrontMotorName);
-        leftRear = hardwareMap.get(DcMotorEx.class, leftRearMotorName);
-        rightRear = hardwareMap.get(DcMotorEx.class, rightRearMotorName);
+        leftBack = hardwareMap.get(DcMotorEx.class, leftBackMotorName);
+        rightBack = hardwareMap.get(DcMotorEx.class, rightBackMotorName);
         rightFront = hardwareMap.get(DcMotorEx.class, rightFrontMotorName);
         leftFront.setDirection(leftFrontMotorDirection);
-        leftRear.setDirection(leftRearMotorDirection);
+        leftBack.setDirection(leftRearMotorDirection);
         rightFront.setDirection(rightFrontMotorDirection);
-        rightRear.setDirection(rightRearMotorDirection);
+        rightBack.setDirection(rightRearMotorDirection);
 
-        motors = Arrays.asList(leftFront, leftRear, rightFront, rightRear);
+        motors = Arrays.asList(leftFront, leftBack, rightFront, rightBack);
 
         for (DcMotorEx motor : motors) {
             MotorConfigurationType motorConfigurationType = motor.getMotorType().clone();
@@ -109,9 +109,9 @@ public class LocalizationTest extends OpMode {
         double rightRearPower = (y + x - rx) / denominator;
 
         leftFront.setPower(leftFrontPower);
-        leftRear.setPower(leftRearPower);
+        leftBack.setPower(leftRearPower);
         rightFront.setPower(rightFrontPower);
-        rightRear.setPower(rightRearPower);
+        rightBack.setPower(rightRearPower);
 
         telemetryA.addData("x", poseUpdater.getPose().getX());
         telemetryA.addData("y", poseUpdater.getPose().getY());

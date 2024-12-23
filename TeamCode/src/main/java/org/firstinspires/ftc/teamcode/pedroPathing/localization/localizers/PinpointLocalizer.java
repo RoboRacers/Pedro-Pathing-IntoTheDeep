@@ -37,6 +37,7 @@ import org.opencv.core.Mat;
  *           |
  *           V
  *    forward (x positive)
+ *
  * With the pinpoint your readings will be used in mm
  * to use inches ensure to divide your mm value by 25.4
  * @author Logan Nash
@@ -77,12 +78,12 @@ public class PinpointLocalizer extends Localizer {
 
         //The default units are inches, but you can swap the units if you wish.
         //If you have already tuned the TwoWheelLocalizer, you can simply use the forwardEncoderPose's y value and strafeEncoderPose's x values.
-        setOffsets(-2.815, 0.125, DistanceUnit.INCH); //these are tuned for 3110-0002-0001 Product Insight #1
+        setOffsets(6, 14, DistanceUnit.INCH); //these are tuned for 3110-0002-0001 Product Insight #1
 
         //TODO: Tune urself if needed
 //        odo.setYawScalar(1.0);
 
-        odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
         //odo.setEncoderResolution(13.26291192);
 
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
@@ -148,7 +149,7 @@ public class PinpointLocalizer extends Localizer {
     @Override
     public void setPose(Pose setPose) {
         Pose setNewPose = MathFunctions.subtractPoses(setPose, startPose);
-        odo.setPosition(new Pose2D(DistanceUnit.INCH, setNewPose.getX(), setNewPose.getY(), AngleUnit.RADIANS, setNewPose.getHeading()));
+        odo.setPosition(new Pose2D(DistanceUnit.INCH, setNewPose.getX(), setNewPose.getY(), AngleUnit.DEGREES, setNewPose.getHeading()));
     }
 
     /**
