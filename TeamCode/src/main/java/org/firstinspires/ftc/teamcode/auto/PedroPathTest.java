@@ -27,8 +27,8 @@ public class PedroPathTest extends LinearOpMode {
 
     public void buildPaths(){
         scorePreload = follower.pathBuilder()
-                .addPath(new BezierCurve(new Point(startPose), new Point(controlPreload1), new Point(controlPreload2), new Point(preloadPose)))
-                .setTangentHeadingInterpolation()
+                .addPath(new BezierCurve(new Point(startPose), new Point(preloadPose)))
+                .setLinearHeadingInterpolation(startPose.getHeading(), preloadPose.getHeading())
                 .build();
 
 
