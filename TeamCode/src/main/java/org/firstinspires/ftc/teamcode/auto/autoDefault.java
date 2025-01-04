@@ -12,6 +12,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Path;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.PathChain;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Point;
 import org.firstinspires.ftc.teamcode.pedroPathing.util.Timer;
+import org.firstinspires.ftc.teamcode.robot.Assembly;
 
 @Autonomous(name = "Defalt Auto Pedro", group = "Test")
 public class autoDefault extends LinearOpMode {
@@ -43,6 +44,7 @@ public class autoDefault extends LinearOpMode {
     private Path scorePreload, park;
     private PathChain grabPickup1, grabPickup2, scorePickup1, scorePickup2;
 
+    private Assembly assembly;
 
     public void buildPaths() {
         /* There are two major types of paths components: BezierCurves and BezierLines.
@@ -117,10 +119,31 @@ public class autoDefault extends LinearOpMode {
                 */
 
                 /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the scorePose's position */
-                if(follower.getPose().getX() > (scorePose.getX() - 1) && follower.getPose().getY() > (scorePose.getY() - 1)) {
-                    /* Score Preload */
-                    //claw.scoringClaw();
-                    //claw.openClaw();
+                if(follower.getPose().getX() > (scorePose.getX() - 1) &&
+                        follower.getPose().getY() > (scorePose.getY() - 1)) {
+
+                    // Move the pitch high once we are at buket
+                    assembly.anglePitch(assembly.PITCH_HIGH_POSITION);
+
+                    // Once the pitch is in high position extended the slides
+                    if(assembly.curren_state == Assembly.STATE_VALUE.PITCH_EXTENDED) {
+                        assembly.extendSlide(assembly.SLIDES_HIGH_POSITION);
+                    }
+
+                    //  Once the slide are extended flip the ARM to mid position
+                    if(assembly.curren_state == Assembly.STATE_VALUE.SLIDE_EXTENDED) {
+                        assembly.flipClaw(assembly.FLIP_MID_POSITION);
+                    }
+
+                    // Once the flip arm is in mid position open the claw
+                    if(assembly.curren_state == Assembly.STATE_VALUE.FLIP_EXTENDED) {
+                        assembly.clawOpen();
+                    }
+
+                    // once the sample is dropped into the bucket flip the arm to down position
+                    // once the flip arm is in down position retract slides.
+
+                    //
                     /* Since this is a pathChain, we can have Pedro hold the end point while we are grabbing the sample */
                     follower.followPath(grabPickup1,true);
                     setPathState(2);
