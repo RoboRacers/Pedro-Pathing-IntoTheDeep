@@ -15,8 +15,8 @@ public class Assembly implements Subsystem {
     Servo flipRight;
 
     Servo claw;
-    final double clawOpen = 0.05;
-    final double clawClose = 0.37;
+    final double CLAW_OPEN = 0.43;
+    final double CLAW_CLOSE = 0.72;
 
     Servo rotateClaw;
 
@@ -30,10 +30,12 @@ public class Assembly implements Subsystem {
         INITIALIZED,
         SLIDE_EXTENDING,
         SLIDE_EXTENDED,
-        PITCH_EXTENDING,
-        PITCH_EXTENDED,
+        PITCH_ROLLING,
+        PITCH_ROLLED,
         FLIP_EXTENDING,
-        FLIP_EXTENDED
+        FLIP_EXTENDED,
+        FLIP_RETRACTING,
+        FLIP_RETRACTED
     }
 
     public STATE_VALUE curren_state = STATE_VALUE.UNINITIALIZED;
@@ -121,18 +123,19 @@ public class Assembly implements Subsystem {
     public Runnable flipClaw(double position) {
         flipLeft.setPosition(position);
         flipRight.setPosition(position * 0.94);
-        curren_state = STATE_VALUE.FLIP_EXTENDED;
+        if (position == FLIP_DOWN_POSITION) curren_state = STATE_VALUE.FLIP_EXTENDING;
+        if (position == FLIP_UP_POSITION) curren_state = STATE_VALUE.FLIP_RETRACTING;
         servoTimer.resetTimer();
         return null;
     }
 
     public Runnable clawOpen() {
-            claw.setPosition(clawOpen);
+            claw.setPosition(CLAW_OPEN);
             return null;
     }
 
     public Runnable clawClose() {
-            claw.setPosition(clawClose);
+            claw.setPosition(CLAW_CLOSE);
             return null;
     }
 
@@ -154,33 +157,6 @@ public class Assembly implements Subsystem {
         return null;
     }
 
-    public Runnable extendSlide(SlidesPosition position) {
-        //ToDo need to repeat this because slides might not reach position in time,
-        // want to repeat the code until it reaches the postion
-        switch (position) {
-            case DOWN:
-                slidesTarget = SLIDES_LOW_POSITION;
-                break;
-            case MID:
-                slidesTarget = SLIDES_MID_POSITION;
-                break;
-            case HIGH:
-                slidesTarget = SLIDES_HIGH_POSITION;
-                break;
-            case MANUALUP:
-                slidesTarget += 75;
-                break;
-            case MANUALDOWN:
-                slidesTarget -= 75;
-                break;
-            case STAY:
-                slidesTarget = slidesTarget;
-                break;
-        }
-        extendSlide(slidesTarget);
-        return null;
-    }
-
     public Runnable anglePitch(int position) {
         //ToDo need to repeat this because slides might not reach position in time,
         // want to repeat the code until it reaches the postion
@@ -192,8 +168,7 @@ public class Assembly implements Subsystem {
         pitchMotor.setPower(feedforward3 + pid + feedforward2);
 
         double pos = pitchMotor.getCurrentPosition();
-        curren_state= STATE_VALUE.PITCH_EXTENDING;
-            //return pos>(pitchTarget - pitchPositionTolerance) && pos<(pitchTarget + pitchPositionTolerance);
+        curren_state= STATE_VALUE.PITCH_ROLLING;
         return null;
     }
 
@@ -243,17 +218,17 @@ public class Assembly implements Subsystem {
                 double pidSlides = slidesControl.calculate(slidesMotor.getCurrentPosition());
                 slidesMotor.setPower(-(pidSlides + feedforward));
                 break;
-            case PITCH_EXTENDING:
+            case PITCH_ROLLING:
                 double pitch_pos = pitchMotor.getCurrentPosition();
                 if( pitch_pos>(pitchControl.getSetpoint() - SLIDES_POSITION_TOLERANCE) &&
                         pitch_pos<(pitchControl.getSetpoint() + SLIDES_POSITION_TOLERANCE)) {
-                    curren_state = STATE_VALUE.PITCH_EXTENDED;
+                    curren_state = STATE_VALUE.PITCH_ROLLED;
                 }
                 else {
                     anglePitch((int)pitchControl.getSetpoint());
                 }
                 break;
-            case PITCH_EXTENDED:
+            case PITCH_ROLLED:
                 pitchControl.setSetpoint(pitchTarget);
                 double feedforward2 = kG2 * (slidesMotor.getCurrentPosition() * ticksToInches) + 0;
                 double feedforward3 = kG * Math.cos(Math.toRadians((pitchMotor.getCurrentPosition() - offset) * ticksToDegrees)) + 0;
@@ -266,6 +241,13 @@ public class Assembly implements Subsystem {
                 }
                 break;
             case FLIP_EXTENDED:
+                break;
+            case FLIP_RETRACTING:
+                if(servoTimer.getElapsedTimeSeconds() > 1.0) {
+                    curren_state = STATE_VALUE.FLIP_RETRACTED;
+                }
+                break;
+            case FLIP_RETRACTED:
                 break;
         }
     }
