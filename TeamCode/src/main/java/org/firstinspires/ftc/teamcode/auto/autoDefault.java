@@ -26,7 +26,7 @@ public class autoDefault extends LinearOpMode {
     private final Pose startPose = new Pose(9, 111, Math.toRadians(270));
 
     /** Scoring Pose of our robot. It is facing the submersible at a -45 degree (315 degree) angle. */
-    private final Pose scorePose = new Pose(14, 129, Math.toRadians(315));
+    private final Pose scorePose = new Pose(14, 130, Math.toRadians(315));
 
     /** Lowest (First) Sample from the Spike Mark */
     private final Pose pickup1Pose = new Pose(37, 121, Math.toRadians(0));
@@ -119,100 +119,75 @@ public class autoDefault extends LinearOpMode {
                 - Robot Position: "if(follower.getPose().getX() > 36) {}"
                 */
 
-//                /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the scorePose's position */
-//                if(follower.getPose().getX() > (scorePose.getX() - 1) &&
-//                        follower.getPose().getY() > (scorePose.getY() - 1)) {
-//
-//                    // Move the pitch high once we are at buket
-//                    assembly.anglePitch(assembly.PITCH_HIGH_POSITION);
-//
-//                    // Once the pitch is in high position extended the slides
-//                    if(assembly.curren_state == Assembly.STATE_VALUE.PITCH_ROLLED) {
-//                        assembly.extendSlide(assembly.SLIDES_HIGH_POSITION);
-//                    }
-//
-//                    //  Once the slide are extended flip the ARM to mid position
-//                    if(assembly.curren_state == Assembly.STATE_VALUE.SLIDE_EXTENDED) {
-//                        assembly.flipClaw(assembly.FLIP_MID_POSITION);
-//                    }
-//
-//                    // Once the flip arm is in mid position open the claw
-//                    if(assembly.curren_state == Assembly.STATE_VALUE.FLIP_EXTENDED) {
-//                        assembly.clawOpen();
-//                        // once the sample is dropped into the bucket flip the arm to down position
-//                        assembly.flipClaw(assembly.FLIP_DOWN_POSITION);
-//                    }
-//
-//                    // once the flip arm is in down position retract slides.
-//                    // Once slides are down pitch the slide to down position
-//                    if(assembly.curren_state== Assembly.STATE_VALUE.FLIP_RETRACTED) {
-//                        assembly.extendSlide(assembly.SLIDES_LOW_POSITION);
-//                        assembly.anglePitch(assembly.PITCH_LOW_POSITION);
-//                    }
+                /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the scorePose's position */
+                if (follower.getPose().getX() > (scorePose.getX() - 3) &&
+                        follower.getPose().getY() > (scorePose.getY() - 3)) {
+
+
+
 
                     /* Since this is a pathChain, we can have Pedro hold the end point while we are grabbing the sample */
-                    //follower.followPath(grabPickup1,true);
-
+                    follower.followPath(grabPickup1, true);
                     setPathState(2);
-//                }
-                break;
-            case 2:
-                /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the pickup1Pose's position */
-                if(follower.getPose().getX() > (pickup1Pose.getX() - 1) && follower.getPose().getY() > (pickup1Pose.getY() - 1)) {
-                    /* Grab Sample */
-                    //claw.groundClaw();
-                    //claw.closeClaw();
-                    /* Since this is a pathChain, we can have Pedro hold the end point while we are scoring the sample */
-                    follower.followPath(scorePickup1,true);
-                    setPathState(3);
                 }
-                break;
-            case 3:
-                /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the scorePose's position */
-                if(follower.getPose().getX() > (scorePose.getX() - 1) && follower.getPose().getY() > (scorePose.getY() - 1)) {
-                    /* Score Sample */
-                    //claw.scoringClaw();
-                    //claw.openClaw();
-                    /* Since this is a pathChain, we can have Pedro hold the end point while we are grabbing the sample */
-                    follower.followPath(grabPickup2,true);
-                    setPathState(4);
-                }
-                break;
-            case 4:
-                /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the pickup2Pose's position */
-                if(follower.getPose().getX() > (pickup2Pose.getX() - 1) && follower.getPose().getY() > (pickup2Pose.getY() - 1)) {
-                    /* Grab Sample */
-                    //claw.groundClaw();
-                    //claw.closeClaw();
-                    /* Since this is a pathChain, we can have Pedro hold the end point while we are scoring the sample */
-                    follower.followPath(scorePickup2,true);
-                    setPathState(5);
-                }
-                break;
-            case 5:
-                /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the scorePose's position */
-                if(follower.getPose().getX() > (scorePose.getX() - 1) && follower.getPose().getY() > (scorePose.getY() - 1)) {
-                    /* Score Sample */
-                    //claw.scoringClaw();
-                    //claw.openClaw();
-                    /* Since this is a pathChain, we can have Pedro hold the end point while we are parked */
-                    follower.followPath(park,true);
-                    setPathState(8);
-                }
-                break;
-            case 6:
-                /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the scorePose's position */
-                if(follower.getPose().getX() > (parkPose.getX() - 1) && follower.getPose().getY() > (parkPose.getY() - 1)) {
-                    /* Put the claw in position to get a level 1 ascent */
-                    //claw.startClaw();
-                    //claw.closeClaw();
+                    break;
+                    case 2:
+                        /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the pickup1Pose's position */
+                        if (follower.getPose().getX() > (pickup1Pose.getX() - 1) && follower.getPose().getY() > (pickup1Pose.getY() - 1)) {
+                            /* Grab Sample */
+                            //claw.groundClaw();
+                            //claw.closeClaw();
+                            /* Since this is a pathChain, we can have Pedro hold the end point while we are scoring the sample */
+                            follower.followPath(scorePickup1, true);
+                            setPathState(3);
+                        }
+                        break;
+                    case 3:
+                        /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the scorePose's position */
+                        if (follower.getPose().getX() > (scorePose.getX() - 1) && follower.getPose().getY() > (scorePose.getY() - 1)) {
+                            /* Score Sample */
+                            //claw.scoringClaw();
+                            //claw.openClaw();
+                            /* Since this is a pathChain, we can have Pedro hold the end point while we are grabbing the sample */
+                            follower.followPath(grabPickup2, true);
+                            setPathState(4);
+                        }
+                        break;
+                    case 4:
+                        /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the pickup2Pose's position */
+                        if (follower.getPose().getX() > (pickup2Pose.getX() - 1) && follower.getPose().getY() > (pickup2Pose.getY() - 1)) {
+                            /* Grab Sample */
+                            //claw.groundClaw();
+                            //claw.closeClaw();
+                            /* Since this is a pathChain, we can have Pedro hold the end point while we are scoring the sample */
+                            follower.followPath(scorePickup2, true);
+                            setPathState(5);
+                        }
+                        break;
+                    case 5:
+                        /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the scorePose's position */
+                        if (follower.getPose().getX() > (scorePose.getX() - 1) && follower.getPose().getY() > (scorePose.getY() - 1)) {
+                            /* Score Sample */
+                            //claw.scoringClaw();
+                            //claw.openClaw();
+                            /* Since this is a pathChain, we can have Pedro hold the end point while we are parked */
+                            follower.followPath(park, true);
+                            setPathState(8);
+                        }
+                        break;
+                    case 6:
+                        /* This case checks the robot's position and will wait until the robot position is close (1 inch away) from the scorePose's position */
+                        if (follower.getPose().getX() > (parkPose.getX() - 1) && follower.getPose().getY() > (parkPose.getY() - 1)) {
+                            /* Put the claw in position to get a level 1 ascent */
+                            //claw.startClaw();
+                            //claw.closeClaw();
 
-                    /* Set the state to a Case we won't use or define, so it just stops running an new paths */
-                    setPathState(-1);
+                            /* Set the state to a Case we won't use or define, so it just stops running an new paths */
+                            setPathState(-1);
+                        }
+                        break;
                 }
-                break;
         }
-    }
 
     /** These change the states of the paths and actions
      * It will also reset the timers of the individual switches **/

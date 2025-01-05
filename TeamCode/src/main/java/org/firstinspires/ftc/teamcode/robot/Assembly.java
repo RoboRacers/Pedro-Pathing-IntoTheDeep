@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.robot;
 
+import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
+import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorImplEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -13,6 +15,9 @@ public class Assembly implements Subsystem {
 
     Servo flipLeft;
     Servo flipRight;
+
+    private Rev2mDistanceSensor distanceSensor;
+    private AnalogInput pot;
 
     Servo claw;
     final double CLAW_OPEN = 0.43;
@@ -51,7 +56,7 @@ public class Assembly implements Subsystem {
     public DcMotorImplEx pitchMotor;
     PIDController pitchControl;
 
-    public final int PITCH_LOW_POSITION = 300;
+    public final int PITCH_LOW_POSITION = 3;
     public final int PITCH_MID_POSITION = 600;
     public final int PITCH_HIGH_POSITION = 1100;
     public final int PITCH_POSITION_TOLERANCE = 20;
@@ -82,10 +87,10 @@ public class Assembly implements Subsystem {
     public final int SLIDES_HIGH_POSITION = 1750;
     public final int SLIDES_POSITION_TOLERANCE = 20;
 
-    public final double FLIP_DOWN_POSITION = 0.130;
-    public final double FLIP_UP_POSITION = 0.75;
-    public final double FLIP_MID_POSITION = 0.575;
-    public final double FLIP_LOW_MID_POSITION = 0.330;
+    public final double FLIP_DOWN_POSITION = 0.136;
+    public final double FLIP_UP_POSITION = 0.568;
+    public final double FLIP_MID_POSITION = 0.375;
+    public final double FLIP_LOW_MID_POSITION = 0.269;
 
 
     public enum SlidesPosition {
@@ -117,6 +122,9 @@ public class Assembly implements Subsystem {
 
         servoTimer = new Timer();
         curren_state = STATE_VALUE.INITIALIZED;
+
+        distanceSensor = hardwareMap.get(Rev2mDistanceSensor.class, "distance");
+        pot = hardwareMap.get(AnalogInput.class,"pot");
     }
 
 

@@ -1,0 +1,25 @@
+assembly.anglePitch(assembly.PITCH_HIGH_POSITION);
+
+                    // Once the pitch is in high position extended the slides
+                    if(assembly.curren_state == Assembly.STATE_VALUE.PITCH_ROLLED) {
+                        assembly.extendSlide(assembly.SLIDES_HIGH_POSITION);
+                    }
+
+                    //  Once the slide are extended flip the ARM to mid position
+                    if(assembly.curren_state == Assembly.STATE_VALUE.SLIDE_EXTENDED) {
+                        assembly.flipClaw(assembly.FLIP_MID_POSITION);
+                    }
+
+                    // Once the flip arm is in mid position open the claw
+                    if(assembly.curren_state == Assembly.STATE_VALUE.FLIP_EXTENDED) {
+                        assembly.clawOpen();
+                        // once the sample is dropped into the bucket flip the arm to down position
+                        assembly.flipClaw(assembly.FLIP_DOWN_POSITION);
+                    }
+
+                    // once the flip arm is in down position retract slides.
+                    // Once slides are down pitch the slide to down position
+                    if(assembly.curren_state== Assembly.STATE_VALUE.FLIP_RETRACTED) {
+                        assembly.extendSlide(assembly.SLIDES_LOW_POSITION);
+                        assembly.anglePitch(assembly.PITCH_LOW_POSITION);
+                    }
