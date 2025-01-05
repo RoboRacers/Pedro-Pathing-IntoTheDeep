@@ -32,7 +32,7 @@ public class SlidesTest extends LinearOpMode {
     public static double kI = 0.001;
     public static double kD = 0.002;
     public static double kF = 0.39;
-    public static double targetAngle = 0.0; // Target angle in degrees
+    public static double targetLength = 0.0; // Target angle in degrees
 
     private double integralSum = 0;
     private double lastError = 0;
@@ -60,7 +60,7 @@ public class SlidesTest extends LinearOpMode {
             double actualCurPos = rawToGoodWithFilter(curPosRaw);
 
             // Calculate error (using angles)
-            double error = targetAngle - actualCurPos;
+            double error = targetLength - actualCurPos;
 
             integralSum += error * timer.seconds();
 
@@ -79,11 +79,11 @@ public class SlidesTest extends LinearOpMode {
             slidesMotor.setPower(motorPower);
 
             lastError = error;
-            lastTarget = targetAngle;
+            lastTarget = targetLength;
             timer.reset();
 
             // Telemetry to dashboard
-            telemetry.addData("Target Pos", targetAngle);
+            telemetry.addData("Target Pos", targetLength);
             telemetry.addData("Current Pos Actual", actualCurPos);
             telemetry.addData("Current Pos Raw", curPosRaw);
             telemetry.addData("Error", error);
@@ -101,29 +101,16 @@ public class SlidesTest extends LinearOpMode {
 
     private double rawToGoodWithFilter(double pos) {
         double actualPos;
-
         if(pos>6) {
-//        if(pos < 45){
-//            double movingAvg;
-//            movingAvg = wma.getAvg(pos);
-//            return Math.round(movingAvg);
-//        }else if (pos > 45){
-//            return pos;
-//        }else{
-//            return pos;
-//        }
-
             actualPos = 0.0000330052 * (Math.pow(pos, 4)) -0.00356719 * (Math.pow(pos, 3)) + 0.137523 * (Math.pow(pos, 2))  -1.15156*pos + 9.04499;
         }
         else{
             actualPos = pos;
-
         }
         return Math.round(actualPos);
     }
 
     private double mapPotentiometerToAngle(double potentiometerValue) {
-
         return ((potentiometerValue - 0.47800000000000004)/ (1.1360000000000001-0.47800000000000004)) * (90 - 0) -0;
     }
 }

@@ -34,7 +34,7 @@ public class voltagevanguardauto extends OpMode {
 
     private int pathState=0;  // This is the variable where we store the state of our auto.
 
-    private final int RESOLUTION = 2; // Error of 2 inches
+    private final int RESOLUTION = 5; // Error of 2 inches
 
     // Create and Define Poses + Paths
     private final Pose startPose = new Pose(9, 111, Math.toRadians(270));
@@ -109,14 +109,18 @@ public class voltagevanguardauto extends OpMode {
         switch (pathState) {
             case 0:
                 if (isStateReady(currentTime)) {
-                    follower.followPath(slidesUp, true);
+                    follower.followPath(slidesUp, false);
                     setPathState(1);
                 }
                 break;
 
             case 1: // Score the preload
-                follower.followPath(scorePreload);
-                setPathState(2);
+
+                if (isWithinResolution(follower.getPose(), scoreSlidesPose) &&
+                        isStateReady(currentTime)) {
+                    follower.followPath(scorePreload, true);
+                    setPathState(2);
+                }
                 break;
             case 2: // Pick first yellow sample
                 if (isWithinResolution(follower.getPose(), scorePose) &&

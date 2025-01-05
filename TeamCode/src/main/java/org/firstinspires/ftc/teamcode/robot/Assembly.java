@@ -4,9 +4,12 @@ import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorImplEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.modules.PIDController;
 import org.firstinspires.ftc.teamcode.pedroPathing.util.Timer;
 
@@ -43,15 +46,15 @@ public class Assembly implements Subsystem {
         FLIP_RETRACTED
     }
 
-    public STATE_VALUE curren_state = STATE_VALUE.UNINITIALIZED;
+    public STATE_VALUE current_state = STATE_VALUE.UNINITIALIZED;
 
     // Pitch Stuff
     public int pitchTarget = 0;
     public  double kG = 0.027;
     public static double kG2 = 0.001;
-    public static double kP = 0.005;
-    public static  double kI = 0;
-    public static  double kD = 0.00045;//pitch constant
+    public static double kPPitch = 0.005;
+    public static  double kIPitch = 0;
+    public static  double kDPitch = 0.00045;//pitch constant
 
     public DcMotorImplEx pitchMotor;
     PIDController pitchControl;
@@ -70,9 +73,10 @@ public class Assembly implements Subsystem {
 
     // Slides Stuff
     public DcMotorImplEx slidesMotor;
-    public double slidesKP = 0.005;
-    public double slidesKI = 0; // slides constant
-    public double slidesKD = 0.0008;
+    public double slidesKP = 0.042;
+    public double slidesKI = 0.001; // slides constant
+    public double slidesKD = 0.002;
+    public double slidesKF = 0.39;
     public  double offset = 40;
     PIDController slidesControl;
     public  double slidesTarget = 0; //slides
@@ -102,6 +106,17 @@ public class Assembly implements Subsystem {
         STAY
     }
 
+    private double rawToGoodWithFilterSlides(double pos) {
+        double actualPos;
+        if(pos>6) {actualPos = 0.0000330052 * (Math.pow(pos, 4)) -0.00356719 * (Math.pow(pos, 3)) + 0.137523 * (Math.pow(pos, 2))  -1.15156*pos + 9.04499;}
+        else{actualPos = pos;}
+        return Math.round(actualPos);
+    }
+
+    private double mapPotentiometerToAngleSlides(double potentiometerValue) {
+        return ((potentiometerValue - 0.47800000000000004)/ (1.1360000000000001-0.47800000000000004)) * (90 - 0) -0;
+    }
+
     public Assembly(HardwareMap hardwareMap) {
         slidesMotor = hardwareMap.get(DcMotorImplEx.class, "slidesMotor");
         pitchMotor = hardwareMap.get(DcMotorImplEx.class, "pitchMotor");
@@ -109,8 +124,8 @@ public class Assembly implements Subsystem {
         flipRight = hardwareMap.get(Servo.class, "flipRight");
         pitchMotor.setMode(DcMotorImplEx.RunMode.STOP_AND_RESET_ENCODER);
         pitchMotor.setMode(DcMotorImplEx.RunMode.RUN_WITHOUT_ENCODER);
-        slidesMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         slidesMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        slidesMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
         flipLeft = hardwareMap.get(Servo.class, "flipLeft");
         flipRight = hardwareMap.get(Servo.class, "flipRight");
@@ -118,10 +133,10 @@ public class Assembly implements Subsystem {
         claw = hardwareMap.get(Servo.class, "claw");
 
         slidesControl = new PIDController(slidesKP, slidesKI, slidesKD);
-        pitchControl = new PIDController(kP, kI, kD);
+        pitchControl = new PIDController(kPPitch, kIPitch, kDPitch);
 
         servoTimer = new Timer();
-        curren_state = STATE_VALUE.INITIALIZED;
+        current_state = STATE_VALUE.INITIALIZED;
 
         distanceSensor = hardwareMap.get(Rev2mDistanceSensor.class, "distance");
         pot = hardwareMap.get(AnalogInput.class,"pot");
@@ -131,8 +146,8 @@ public class Assembly implements Subsystem {
     public Runnable flipClaw(double position) {
         flipLeft.setPosition(position);
         flipRight.setPosition(position * 0.94);
-        if (position == FLIP_DOWN_POSITION) curren_state = STATE_VALUE.FLIP_EXTENDING;
-        if (position == FLIP_UP_POSITION) curren_state = STATE_VALUE.FLIP_RETRACTING;
+        if (position == FLIP_DOWN_POSITION) current_state = STATE_VALUE.FLIP_EXTENDING;
+        if (position == FLIP_UP_POSITION) current_state = STATE_VALUE.FLIP_RETRACTING;
         servoTimer.resetTimer();
         return null;
     }
@@ -155,13 +170,57 @@ public class Assembly implements Subsystem {
     public Runnable extendSlide(double position) {
         //ToDo need to repeat this because slides might not reach position in time,
         // want to repeat the code until it reaches the postion
+        /*
         slidesTarget = position;
         slidesControl.setSetpoint(slidesTarget);
         double feedforward = kG * Math.sin(Math.toRadians((pitchMotor.getCurrentPosition() - offset) * ticksToDegrees)) + 0;
         double pid2 = slidesControl.calculate(slidesMotor.getCurrentPosition());
         slidesMotor.setPower(-(pid2 + feedforward));
+         */
+        double curPosRaw = distanceSensor.getDistance(DistanceUnit.CM);
+        double actualCurPos = rawToGoodWithFilterSlides(curPosRaw);
 
-        curren_state = STATE_VALUE.SLIDE_EXTENDING;
+        // Calculate error (using angles)
+        double error = position - actualCurPos;
+        double integralSum = 0;
+        ElapsedTime timer = new ElapsedTime();
+
+        integralSum += error * timer.seconds();
+
+        double lastError = error;
+
+
+        double derivative = (error - lastError) / timer.seconds();
+
+        double feedForward = slidesKF * Math.sin(Math.toRadians(mapPotentiometerToAngleSlides(pot.getVoltage())));
+
+        double motorPower = (slidesKP * error) + (slidesKI * integralSum) + (slidesKD * derivative) + feedForward;
+
+        motorPower = Math.max(-1.0, Math.min(1.0, motorPower));
+
+        double maxPower = 1.0;
+
+        if(Math.abs(motorPower) > Math.abs(maxPower)){
+            maxPower = motorPower;
+        }
+
+        slidesMotor.setPower(motorPower);
+
+        lastError = error;
+        double lastTarget = position;
+        timer.reset();
+        
+        /*
+        double curPosRaw = distanceSensor.getDistance(DistanceUnit.CM);
+        double actualCurPos = rawToGoodWithFilterSlides(curPosRaw);
+        slidesControl.setCoefficients(slidesKP, slidesKI, slidesKD);
+        double feedForward = slidesKF * Math.sin(Math.toRadians(mapPotentiometerToAngleSlides(pot.getVoltage())));
+        double motorPower =(slidesControl.calculate(actualCurPos) + feedForward);
+        slidesMotor.setPower(motorPower);
+        
+         */
+
+        current_state = STATE_VALUE.SLIDE_EXTENDING;
         return null;
     }
 
@@ -176,7 +235,7 @@ public class Assembly implements Subsystem {
         pitchMotor.setPower(feedforward3 + pid + feedforward2);
 
         double pos = pitchMotor.getCurrentPosition();
-        curren_state= STATE_VALUE.PITCH_ROLLING;
+        current_state = STATE_VALUE.PITCH_ROLLING;
         return null;
     }
 
@@ -204,21 +263,23 @@ public class Assembly implements Subsystem {
 
     @Override
     public void update() {
-        switch (curren_state) {
+        switch (current_state) {
             case INITIALIZED:
                 break;
             case UNINITIALIZED:
                 break;
             case SLIDE_EXTENDING:
                 double pos = slidesMotor.getCurrentPosition();
-
+/*
                 if( pos>(slidesControl.getSetpoint() - SLIDES_POSITION_TOLERANCE) &&
                     pos<(slidesControl.getSetpoint() + SLIDES_POSITION_TOLERANCE)) {
-                    curren_state = STATE_VALUE.SLIDE_EXTENDED;
+                    current_state = STATE_VALUE.SLIDE_EXTENDED;
                 }
                 else {
                     extendSlide(slidesControl.getSetpoint());
                 }
+
+ */
                 break;
             case SLIDE_EXTENDED:
                 slidesControl.setSetpoint(slidesTarget);
@@ -230,7 +291,7 @@ public class Assembly implements Subsystem {
                 double pitch_pos = pitchMotor.getCurrentPosition();
                 if( pitch_pos>(pitchControl.getSetpoint() - SLIDES_POSITION_TOLERANCE) &&
                         pitch_pos<(pitchControl.getSetpoint() + SLIDES_POSITION_TOLERANCE)) {
-                    curren_state = STATE_VALUE.PITCH_ROLLED;
+                    current_state = STATE_VALUE.PITCH_ROLLED;
                 }
                 else {
                     anglePitch((int)pitchControl.getSetpoint());
@@ -245,14 +306,14 @@ public class Assembly implements Subsystem {
                 break;
             case FLIP_EXTENDING:
                 if(servoTimer.getElapsedTimeSeconds() > 1.0) {
-                    curren_state = STATE_VALUE.FLIP_EXTENDED;
+                    current_state = STATE_VALUE.FLIP_EXTENDED;
                 }
                 break;
             case FLIP_EXTENDED:
                 break;
             case FLIP_RETRACTING:
                 if(servoTimer.getElapsedTimeSeconds() > 1.0) {
-                    curren_state = STATE_VALUE.FLIP_RETRACTED;
+                    current_state = STATE_VALUE.FLIP_RETRACTED;
                 }
                 break;
             case FLIP_RETRACTED:
