@@ -12,6 +12,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Path;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.PathChain;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Point;
 import org.firstinspires.ftc.teamcode.pedroPathing.util.Timer;
+import org.firstinspires.ftc.teamcode.robot.Assembly;
 
 //import org.firstinspires.ftc.teamcode.subsystems.deposit.DepositClawSubsystem;
 //import org.firstinspires.ftc.teamcode.subsystems.deposit.DepositSlideSubsystem;
@@ -45,6 +46,7 @@ public class voltagevanguardauto extends OpMode {
     private final Pose parkPose = new Pose(60, 98, Math.toRadians(90));
     private final Pose parkControlPose = new Pose(60, 98, Math.toRadians(90));
     private Path park;
+    private Assembly assembly;
     private PathChain slidesUp, scorePreload, grabPickup1, slidesUpPick1, grabPickup2, slidesUpPick2, scorePickup1, scorePickup2, scorePickup3;
 
     // Build the paths for the auto
@@ -115,68 +117,124 @@ public class voltagevanguardauto extends OpMode {
                 break;
 
             case 1: // Score the preload
-
-                if (isWithinResolution(follower.getPose(), scoreSlidesPose) &&
-                        isStateReady(currentTime)) {
-                    follower.followPath(scorePreload, true);
-                    setPathState(2);
+                if (isWithinResolution(follower.getPose(), scoreSlidesPose) && isStateReady(currentTime)) {
+                    long stateStartTimeSlides = System.currentTimeMillis();
+                    assembly.extendSlide(assembly.SLIDES_HIGH_POSITION);
+                    if (System.currentTimeMillis() - stateStartTime > 2000) {
+                        assembly.flipClaw(assembly.FLIP_UP_POSITION);
+                    }
+                    if (assembly.current_state == assembly.current_state.FLIP_EXTENDED) {
+                        assembly.clawOpen();
+                        if (System.currentTimeMillis() - stateStartTime > 5000) {
+                            assembly.flipClaw(assembly.FLIP_DOWN_POSITION);
+                            assembly.extendSlide(assembly.SLIDES_LOW_POSITION);
+                            assembly.anglePitch(assembly.PITCH_LOW_POSITION);
+                        }
+                        if (assembly.current_state == assembly.current_state.SLIDE_EXTENDED) {
+                            follower.followPath(scorePreload, true);
+                            setPathState(2);
+                        }
+                    }
                 }
+
                 break;
             case 2: // Pick first yellow sample
                 if (isWithinResolution(follower.getPose(), scorePose) &&
                         isStateReady(currentTime)) {
-                    follower.followPath(grabPickup1, true);
-                    setPathState(3);
+                    long stateStartTimeSlides = System.currentTimeMillis();
+                    assembly.extendSlide(assembly.SLIDES_HIGH_POSITION);
+                    if (System.currentTimeMillis() - stateStartTime > 2000) {
+                        assembly.flipClaw(assembly.FLIP_DOWN_POSITION);
+                    }
+                    if (assembly.current_state == assembly.current_state.FLIP_EXTENDED) {
+                        assembly.clawClose();
+                        if (System.currentTimeMillis() - stateStartTime > 5000) {
+                            assembly.extendSlide(assembly.SLIDES_LOW_POSITION);
+                        }
+                        if (assembly.current_state == assembly.current_state.SLIDE_EXTENDED) {
+                            follower.followPath(scorePreload, true);
+                            setPathState(3);
+                        }
+                    }
                 }
                 break;
 
             case 3:
                 if (isWithinResolution(follower.getPose(), pickup1Pose) &&
                         isStateReady(currentTime)) {
-                    follower.followPath(slidesUpPick1, true);
-                    setPathState(4);
+                    long stateStartTimeSlides = System.currentTimeMillis();
+                    assembly.extendSlide(assembly.SLIDES_HIGH_POSITION);
+                    if (System.currentTimeMillis() - stateStartTime > 2000) {
+                        assembly.flipClaw(assembly.FLIP_UP_POSITION);
+                    }
+                    if (assembly.current_state == assembly.current_state.FLIP_EXTENDED) {
+                        assembly.clawOpen();
+                        if (System.currentTimeMillis() - stateStartTime > 5000) {
+                            assembly.flipClaw(assembly.FLIP_DOWN_POSITION);
+                            assembly.extendSlide(assembly.SLIDES_LOW_POSITION);
+                            assembly.anglePitch(assembly.PITCH_LOW_POSITION);
+                        }
+                        if (assembly.current_state == assembly.current_state.SLIDE_EXTENDED) {
+                            follower.followPath(scorePickup1, true);
+                            setPathState(4);
+                        }
+                    }
                 }
                 break;
 
-            case 4: // Score first yellow sample
-                if (isWithinResolution(follower.getPose(), scoreSlidesPose) &&
+            case 4:
+                if (isWithinResolution(follower.getPose(), scorePose) &&
                         isStateReady(currentTime)) {
-                    follower.followPath(scorePickup1, true);
-                    setPathState(5);
+                    long stateStartTimeSlides = System.currentTimeMillis();
+                    assembly.extendSlide(assembly.SLIDES_HIGH_POSITION);
+                    if (System.currentTimeMillis() - stateStartTime > 2000) {
+                        assembly.flipClaw(assembly.FLIP_DOWN_POSITION);
+                    }
+                    if (assembly.current_state == assembly.current_state.FLIP_EXTENDED) {
+                        assembly.clawClose();
+                        if (System.currentTimeMillis() - stateStartTime > 5000) {
+                            assembly.extendSlide(assembly.SLIDES_LOW_POSITION);
+                        }
+                        if (assembly.current_state == assembly.current_state.SLIDE_EXTENDED) {
+                            follower.followPath(grabPickup2, true);
+                            setPathState(5);
+                        }
+                    }
                 }
                 break;
 
-            case 5: // Navigate to pick second yellow sample
-                if (isWithinResolution(follower.getPose(), scorePose) && isStateReady(currentTime)) {
-                    follower.followPath(grabPickup2, true);
-                    setPathState(6);
+            case 5:
+                if (isWithinResolution(follower.getPose(), pickup2Pose) && isStateReady(currentTime)) {
+                    long stateStartTimeSlides = System.currentTimeMillis();
+                    assembly.extendSlide(assembly.SLIDES_HIGH_POSITION);
+                    if (System.currentTimeMillis() - stateStartTime > 2000) {
+                        assembly.flipClaw(assembly.FLIP_UP_POSITION);
+                    }
+                    if (assembly.current_state == assembly.current_state.FLIP_EXTENDED) {
+                        assembly.clawOpen();
+                        if (System.currentTimeMillis() - stateStartTime > 5000) {
+                            assembly.flipClaw(assembly.FLIP_DOWN_POSITION);
+                            assembly.extendSlide(assembly.SLIDES_LOW_POSITION);
+                            assembly.anglePitch(assembly.PITCH_LOW_POSITION);
+                        }
+                        if (assembly.current_state == assembly.current_state.SLIDE_EXTENDED) {
+                            follower.followPath(scorePickup2, true);
+                            setPathState(6);
+                        }
+                    }
                 }
                 break;
 
             case 6:
-                if (isWithinResolution(follower.getPose(), pickup2Pose) && isStateReady(currentTime)) {
-                    follower.followPath(slidesUpPick2, true);
+                if (isWithinResolution(follower.getPose(), scorePose) && isStateReady(currentTime)) {
+                    follower.followPath(park, true);
                     setPathState(7);
                 }
                 break;
 
-            case 7: // Navigate to score position from second sample
-                if (isWithinResolution(follower.getPose(), scoreSlidesPose) && isStateReady(currentTime)) {
-                    follower.followPath(scorePickup2, true);
-                    setPathState(8);
-                }
-                break;
-
-            case 8:
-                if (isWithinResolution(follower.getPose(), scorePose) && isStateReady(currentTime)) {
-                    follower.followPath(park, true);
-                    setPathState(9);
-                }
-                break;
-
-            case 9:
+            case 7:
                 if (isWithinResolution(follower.getPose(), parkPose) && isStateReady(currentTime)) {
-                    setPathState(-1); // End state
+                    setPathState(8); // End state
                 }
                 break;
         }
