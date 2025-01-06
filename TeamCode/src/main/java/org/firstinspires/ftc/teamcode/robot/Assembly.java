@@ -13,7 +13,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.modules.PIDController;
 import org.firstinspires.ftc.teamcode.pedroPathing.util.Timer;
 
-//@TeleOp(name = "LM2 One Driver", group = "Test")
 public class Assembly implements Subsystem {
 
     Servo flipLeft;
@@ -49,12 +48,14 @@ public class Assembly implements Subsystem {
     public STATE_VALUE current_state = STATE_VALUE.UNINITIALIZED;
 
     // Pitch Stuff
-    public int pitchTarget = 0;
-    public  double kG = 0.027;
-    public static double kG2 = 0.001;
-    public static double kPPitch = 0.005;
-    public static  double kIPitch = 0;
-    public static  double kDPitch = 0.00045;//pitch constant
+    public double pitchTarget = 0;
+    public static double kFPitch = 0.22;
+    public static double kPPitch = 0.026;
+    public static double kIPitch = 0;
+    public static double kDPitch = 0.003;//pitch constant
+    public static double lastTargetPitch = 0.0;
+    public static double lastErrorPitch = 0.0;
+
 
     public DcMotorImplEx pitchMotor;
     PIDController pitchControl;
@@ -113,7 +114,7 @@ public class Assembly implements Subsystem {
         return Math.round(actualPos);
     }
 
-    private double mapPotentiometerToAngleSlides(double potentiometerValue) {
+    private double mapPotentiometerToAngle(double potentiometerValue) {
         return ((potentiometerValue - 0.47800000000000004)/ (1.1360000000000001-0.47800000000000004)) * (90 - 0) -0;
     }
 
@@ -191,7 +192,7 @@ public class Assembly implements Subsystem {
 
         double derivative = (error - lastError) / timer.seconds();
 
-        double feedForward = slidesKF * Math.sin(Math.toRadians(mapPotentiometerToAngleSlides(pot.getVoltage())));
+        double feedForward = slidesKF * Math.sin(Math.toRadians(mapPotentiometerToAngle(pot.getVoltage())));
 
         double motorPower = (slidesKP * error) + (slidesKI * integralSum) + (slidesKD * derivative) + feedForward;
 
@@ -215,17 +216,53 @@ public class Assembly implements Subsystem {
         return null;
     }
 
-    public Runnable anglePitch(int position) {
+    public Runnable anglePitch(double position) {
         //ToDo need to repeat this because slides might not reach position in time,
         // want to repeat the code until it reaches the postion
-        pitchTarget = position;
-        pitchControl.setSetpoint(pitchTarget);
-        double feedforward2 = kG2 * (slidesMotor.getCurrentPosition() * ticksToInches) + 0;
-        double feedforward3 = kG * Math.cos(Math.toRadians((pitchMotor.getCurrentPosition() - offset) * ticksToDegrees)) + 0;
-        double pid = pitchControl.calculate(pitchMotor.getCurrentPosition());
-        pitchMotor.setPower(feedforward3 + pid + feedforward2);
+        ElapsedTime timer = new ElapsedTime();
+        double integralSum = 0.0;
 
-        double pos = pitchMotor.getCurrentPosition();
+        double currentVoltage = pot.getVoltage();
+        double currentAngle = mapPotentiometerToAngle(currentVoltage);
+
+        double targetAngle = position;
+        // Calculate error (using angles)
+        double error = targetAngle - currentAngle;
+
+        if (targetAngle>45){
+            kPPitch = 0.026;
+            kDPitch = 0.003;
+            kIPitch = 0.0;
+            kFPitch = 0.22;
+        }else if (targetAngle<=45){
+            kPPitch = 0.009;
+            kDPitch = 0.0;
+            kIPitch = 0.0;
+            kFPitch= 0.1;
+        }
+
+        if(Math.abs(error) < 10 && Math.abs(error)>1){
+//                kP = 0.054;
+//                kD = 0.0015;
+            kIPitch = 0.0018;
+        }
+
+        integralSum += error * timer.seconds();
+
+        double derivative = (error - lastErrorPitch) / timer.seconds();
+
+        double feedForward = kFPitch * Math.cos(Math.toRadians(currentAngle));
+
+        double motorPower = (kPPitch * error) + (kIPitch * integralSum) + (kDPitch * derivative) + feedForward;
+
+        motorPower = Math.max(-1.0, Math.min(1.0, motorPower));
+
+        pitchMotor.setPower(motorPower);
+
+        lastErrorPitch = error;
+        lastTargetPitch = targetAngle;
+        timer.reset();
+
         current_state = STATE_VALUE.PITCH_ROLLING;
         return null;
     }
@@ -273,10 +310,6 @@ public class Assembly implements Subsystem {
  */
                 break;
             case SLIDE_EXTENDED:
-                slidesControl.setSetpoint(slidesTarget);
-                double feedforward = kG * Math.sin(Math.toRadians((pitchMotor.getCurrentPosition() - offset) * ticksToDegrees)) + 0;
-                double pidSlides = slidesControl.calculate(slidesMotor.getCurrentPosition());
-                slidesMotor.setPower(-(pidSlides + feedforward));
                 break;
             case PITCH_ROLLING:
                 double pitch_pos = pitchMotor.getCurrentPosition();
@@ -289,11 +322,6 @@ public class Assembly implements Subsystem {
                 }
                 break;
             case PITCH_ROLLED:
-                pitchControl.setSetpoint(pitchTarget);
-                double feedforward2 = kG2 * (slidesMotor.getCurrentPosition() * ticksToInches) + 0;
-                double feedforward3 = kG * Math.cos(Math.toRadians((pitchMotor.getCurrentPosition() - offset) * ticksToDegrees)) + 0;
-                double pidPitch = pitchControl.calculate(pitchMotor.getCurrentPosition());
-                pitchMotor.setPower(feedforward3 + pidPitch + feedforward2);
                 break;
             case FLIP_EXTENDING:
                 if(servoTimer.getElapsedTimeSeconds() > 1.0) {
