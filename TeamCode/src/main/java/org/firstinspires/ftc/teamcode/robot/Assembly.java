@@ -86,10 +86,10 @@ public class Assembly implements Subsystem {
     final double ticksToInches = (double) 26 /ticksPerMaxExtend;
     final double ticksToDegrees = (double) 90 /ticksPerRightAngle;
 
-    public final int SLIDES_LOW_POSITION = 400;
-    public final int SLIDES_MID_POSITION = 950;
-    public final int SLIDES_HIGH_POSITION = 1750;
-    public final int SLIDES_POSITION_TOLERANCE = 20;
+    public final int SLIDES_LOW_POSITION = 20;
+    public final int SLIDES_MID_POSITION = 35;
+    public final int SLIDES_HIGH_POSITION = 55;
+    public final int SLIDES_POSITION_TOLERANCE = 2;
 
     public final double FLIP_DOWN_POSITION = 0.136;
     public final double FLIP_UP_POSITION = 0.568;
@@ -169,7 +169,7 @@ public class Assembly implements Subsystem {
 
     public Runnable extendSlide(double position) {
         //ToDo need to repeat this because slides might not reach position in time,
-        // want to repeat the code until it reaches the postion
+        // want to repeat the code until it reaches the position
         /*
         slidesTarget = position;
         slidesControl.setSetpoint(slidesTarget);
@@ -189,7 +189,6 @@ public class Assembly implements Subsystem {
 
         double lastError = error;
 
-
         double derivative = (error - lastError) / timer.seconds();
 
         double feedForward = slidesKF * Math.sin(Math.toRadians(mapPotentiometerToAngleSlides(pot.getVoltage())));
@@ -198,16 +197,8 @@ public class Assembly implements Subsystem {
 
         motorPower = Math.max(-1.0, Math.min(1.0, motorPower));
 
-        double maxPower = 1.0;
-
-        if(Math.abs(motorPower) > Math.abs(maxPower)){
-            maxPower = motorPower;
-        }
-
         slidesMotor.setPower(motorPower);
 
-        lastError = error;
-        double lastTarget = position;
         timer.reset();
         
         /*

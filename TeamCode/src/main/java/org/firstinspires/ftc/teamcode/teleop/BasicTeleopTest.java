@@ -12,12 +12,6 @@ import org.firstinspires.ftc.teamcode.robot.Assembly;
 public class BasicTeleopTest extends LinearOpMode {
 
     private Assembly assembly;
-    Servo claw;
-    DcMotorImplEx pitchMotor;
-    DcMotorImplEx slidesMotor;
-    private FtcDashboard dashboard;
-
-    public static double targetValue = 10;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -29,15 +23,26 @@ public class BasicTeleopTest extends LinearOpMode {
 
         while(!isStopRequested()) {
             if (gamepad1.dpad_up){
-                targetValue = 40;
+                assembly.extendSlide(assembly.SLIDES_HIGH_POSITION);
             }else if(gamepad1.dpad_right){
-                targetValue = 20;
+                assembly.extendSlide(assembly.SLIDES_MID_POSITION);
             }else if(gamepad1.dpad_left){
-                targetValue = 10;
+                assembly.extendSlide(assembly.SLIDES_LOW_POSITION);
             }
 
-            assembly.extendSlide(targetValue);
-            telemetry.addData("Target", targetValue);
+            if (gamepad1.triangle){
+                assembly.flipClaw(assembly.FLIP_UP_POSITION);
+            }else if(gamepad1.cross){
+                assembly.flipClaw(assembly.FLIP_DOWN_POSITION);
+            }
+
+            if(gamepad1.right_bumper){
+                assembly.clawOpen();
+            } else if (gamepad1.left_bumper) {
+                assembly.clawClose();
+            }
+
+            telemetry.addData("Slides", assembly.slidesTarget);
 
 
             telemetry.update();
