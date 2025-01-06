@@ -60,10 +60,10 @@ public class Assembly implements Subsystem {
     public DcMotorImplEx pitchMotor;
     PIDController pitchControl;
 
-    public final int PITCH_LOW_POSITION = 3;
-    public final int PITCH_MID_POSITION = 600;
-    public final int PITCH_HIGH_POSITION = 1100;
-    public final int PITCH_POSITION_TOLERANCE = 20;
+    public final int PITCH_LOW_POSITION = 10;
+    public final int PITCH_MID_POSITION = 30;
+    public final int PITCH_HIGH_POSITION = 110;
+    public final int PITCH_POSITION_TOLERANCE = 1;
 
     public enum PitchPosition {
         DOWN,
@@ -74,28 +74,27 @@ public class Assembly implements Subsystem {
 
     // Slides Stuff
     public DcMotorImplEx slidesMotor;
+    ElapsedTime timerSlides = new ElapsedTime();
     public double slidesKP = 0.042;
     public double slidesKI = 0.001; // slides constant
     public double slidesKD = 0.002;
     public double slidesKF = 0.39;
-    public  double offset = 40;
     PIDController slidesControl;
-    public  double slidesTarget = 0; //slides
+    public double lastErrorSlides = 0.0;
 
     public  double ticksPerMaxExtend = 1936;
     public  double ticksPerRightAngle = 930;
-    final double ticksToInches = (double) 26 /ticksPerMaxExtend;
-    final double ticksToDegrees = (double) 90 /ticksPerRightAngle;
 
-    public final int SLIDES_LOW_POSITION = 20;
-    public final int SLIDES_MID_POSITION = 35;
+    public final int SLIDES_LOW_POSITION = 5;
+    public final int SLIDES_MID_POSITION = 30;
     public final int SLIDES_HIGH_POSITION = 55;
     public final int SLIDES_POSITION_TOLERANCE = 2;
 
     public final double FLIP_DOWN_POSITION = 0.136;
     public final double FLIP_UP_POSITION = 0.568;
     public final double FLIP_MID_POSITION = 0.375;
-    public final double FLIP_LOW_MID_POSITION = 0.269;
+
+    protected ElapsedTime timerPitch = new ElapsedTime();
 
 
     public enum SlidesPosition {
@@ -126,7 +125,8 @@ public class Assembly implements Subsystem {
         pitchMotor.setMode(DcMotorImplEx.RunMode.STOP_AND_RESET_ENCODER);
         pitchMotor.setMode(DcMotorImplEx.RunMode.RUN_WITHOUT_ENCODER);
         slidesMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        slidesMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        //slidesMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        pitchMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
         flipLeft = hardwareMap.get(Servo.class, "flipLeft");
         flipRight = hardwareMap.get(Servo.class, "flipRight");
@@ -171,26 +171,19 @@ public class Assembly implements Subsystem {
     public Runnable extendSlide(double position) {
         //ToDo need to repeat this because slides might not reach position in time,
         // want to repeat the code until it reaches the position
-        /*
-        slidesTarget = position;
-        slidesControl.setSetpoint(slidesTarget);
-        double feedforward = kG * Math.sin(Math.toRadians((pitchMotor.getCurrentPosition() - offset) * ticksToDegrees)) + 0;
-        double pid2 = slidesControl.calculate(slidesMotor.getCurrentPosition());
-        slidesMotor.setPower(-(pid2 + feedforward));
-         */
         double curPosRaw = distanceSensor.getDistance(DistanceUnit.CM);
         double actualCurPos = rawToGoodWithFilterSlides(curPosRaw);
 
         // Calculate error (using angles)
         double error = position - actualCurPos;
         double integralSum = 0;
-        ElapsedTime timer = new ElapsedTime();
+        //ElapsedTime timerSlides = new ElapsedTime();
 
-        integralSum += error * timer.seconds();
+        integralSum += error * timerSlides.seconds();
 
-        double lastError = error;
+        lastErrorSlides = error;
 
-        double derivative = (error - lastError) / timer.seconds();
+        double derivative = (error - lastErrorSlides) / timerSlides.seconds();
 
         double feedForward = slidesKF * Math.sin(Math.toRadians(mapPotentiometerToAngle(pot.getVoltage())));
 
@@ -200,17 +193,8 @@ public class Assembly implements Subsystem {
 
         slidesMotor.setPower(motorPower);
 
-        timer.reset();
-        
-        /*
-        double curPosRaw = distanceSensor.getDistance(DistanceUnit.CM);
-        double actualCurPos = rawToGoodWithFilterSlides(curPosRaw);
-        slidesControl.setCoefficients(slidesKP, slidesKI, slidesKD);
-        double feedForward = slidesKF * Math.sin(Math.toRadians(mapPotentiometerToAngleSlides(pot.getVoltage())));
-        double motorPower =(slidesControl.calculate(actualCurPos) + feedForward);
-        slidesMotor.setPower(motorPower);
-        
-         */
+        timerSlides.reset();
+
 
         current_state = STATE_VALUE.SLIDE_EXTENDING;
         return null;
@@ -219,7 +203,8 @@ public class Assembly implements Subsystem {
     public Runnable anglePitch(double position) {
         //ToDo need to repeat this because slides might not reach position in time,
         // want to repeat the code until it reaches the postion
-        ElapsedTime timer = new ElapsedTime();
+        //ElapsedTime timer = new ElapsedTime();
+
         double integralSum = 0.0;
 
         double currentVoltage = pot.getVoltage();
@@ -229,12 +214,12 @@ public class Assembly implements Subsystem {
         // Calculate error (using angles)
         double error = targetAngle - currentAngle;
 
-        if (targetAngle>45){
+        if (targetAngle>lastTargetPitch){
             kPPitch = 0.026;
             kDPitch = 0.003;
-            kIPitch = 0.0;
+            kIPitch = 0.000;
             kFPitch = 0.22;
-        }else if (targetAngle<=45){
+        }else if (targetAngle<lastTargetPitch){
             kPPitch = 0.009;
             kDPitch = 0.0;
             kIPitch = 0.0;
@@ -247,9 +232,9 @@ public class Assembly implements Subsystem {
             kIPitch = 0.0018;
         }
 
-        integralSum += error * timer.seconds();
+        integralSum += error * timerPitch.seconds();
 
-        double derivative = (error - lastErrorPitch) / timer.seconds();
+        double derivative = (error - lastErrorPitch) / timerPitch.seconds();
 
         double feedForward = kFPitch * Math.cos(Math.toRadians(currentAngle));
 
@@ -261,7 +246,7 @@ public class Assembly implements Subsystem {
 
         lastErrorPitch = error;
         lastTargetPitch = targetAngle;
-        timer.reset();
+        timerPitch.reset();
 
         current_state = STATE_VALUE.PITCH_ROLLING;
         return null;

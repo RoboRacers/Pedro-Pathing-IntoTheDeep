@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @TeleOp(name = "Arm Control with PIDF Dashboard", group = "Arm")
@@ -53,6 +54,7 @@ public class PitchPIDF extends LinearOpMode {
         pot = hardwareMap.get(AnalogInput.class, "pot");
 
         armMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        armMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // Initialize FTC Dashboard
         dashboard = FtcDashboard.getInstance();

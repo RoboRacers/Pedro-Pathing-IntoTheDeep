@@ -33,7 +33,9 @@ public class BasicTeleopTest extends LinearOpMode {
     private DcMotorEx leftBack;
     private DcMotorEx rightFront;
     private DcMotorEx rightBack;
-    private List<DcMotorEx> motors;
+
+    public double slidesTarget = 5;
+    public double pitchTarget = 15;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -75,22 +77,26 @@ public class BasicTeleopTest extends LinearOpMode {
 
 
             if (gamepad1.dpad_up){
-                assembly.extendSlide(50);
+                slidesTarget = 50;
             }else if(gamepad1.dpad_right){
-                assembly.extendSlide(30);
+                slidesTarget = 30;
             }else if(gamepad1.dpad_down){
-                assembly.extendSlide(20);
+                slidesTarget = 5;
             }
+
+            assembly.extendSlide(slidesTarget);
 
 
 
             if (gamepad1.cross){
-                assembly.anglePitch(15);
+                pitchTarget = 10;
             } else if (gamepad1.triangle) {
-                assembly.anglePitch(87);
+                pitchTarget = 100;
             }else if (gamepad1.circle){
-                assembly.anglePitch(50);
+                pitchTarget = 20;
             }
+
+            assembly.anglePitch(pitchTarget);
 
 
 
@@ -107,7 +113,8 @@ public class BasicTeleopTest extends LinearOpMode {
                 assembly.clawClose();
             }
 
-            telemetry.addData("Slides", assembly.slidesTarget);
+            telemetry.addData("Slides", slidesTarget);
+            telemetry.addData("Pitch", pitchTarget);
 
 
             telemetry.update();

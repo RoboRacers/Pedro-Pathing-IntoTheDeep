@@ -35,7 +35,7 @@ public class voltagevanguardauto extends OpMode {
 
     private int pathState=0;  // This is the variable where we store the state of our auto.
 
-    private final int RESOLUTION = 5; // Error of 2 inches
+    private final int RESOLUTION = 10; // Error of 2 inches
 
     // Create and Define Poses + Paths
     private final Pose startPose = new Pose(9, 111, Math.toRadians(270));
@@ -120,21 +120,20 @@ public class voltagevanguardauto extends OpMode {
                 if (isWithinResolution(follower.getPose(), scoreSlidesPose) && isStateReady(currentTime)) {
                     long stateStartTimeSlides = System.currentTimeMillis();
                     assembly.extendSlide(assembly.SLIDES_HIGH_POSITION);
-                    if (System.currentTimeMillis() - stateStartTime > 2000) {
+                    if (System.currentTimeMillis() - stateStartTimeSlides > 2000) {
                         assembly.flipClaw(assembly.FLIP_UP_POSITION);
-                    }
-                    if (assembly.current_state == assembly.current_state.FLIP_EXTENDED) {
                         assembly.clawOpen();
-                        if (System.currentTimeMillis() - stateStartTime > 5000) {
-                            assembly.flipClaw(assembly.FLIP_DOWN_POSITION);
-                            assembly.extendSlide(assembly.SLIDES_LOW_POSITION);
-                            assembly.anglePitch(assembly.PITCH_LOW_POSITION);
-                        }
-                        if (assembly.current_state == assembly.current_state.SLIDE_EXTENDED) {
-                            follower.followPath(scorePreload, true);
-                            setPathState(2);
-                        }
                     }
+                    if (System.currentTimeMillis() - stateStartTimeSlides > 5000) {
+                        assembly.flipClaw(assembly.FLIP_DOWN_POSITION);
+                        assembly.extendSlide(assembly.SLIDES_LOW_POSITION);
+                        assembly.anglePitch(assembly.PITCH_LOW_POSITION);
+                    }
+                    if (assembly.current_state == assembly.current_state.SLIDE_EXTENDED) {
+                        follower.followPath(scorePreload, true);
+                        setPathState(2);
+                    }
+
                 }
 
                 break;
